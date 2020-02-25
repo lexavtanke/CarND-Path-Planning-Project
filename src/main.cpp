@@ -107,38 +107,101 @@ int main() {
           if (path_size > 0) {
               car_s = end_path_s;
           }
+          
+          // set up save distance
+          const double SAVE_DIST = 20.0; 
 
-          bool too_close = false;
+          // flags for lane occupancy
+          bool same_lane = false;
+          bool left_lane = false;
+          bool right_lane = false;
 
-          //find reference velosity to use
+          //analize sensor fusion data
           for(int i = 0; i < sensor_fusion.size(); i++){
             // car in my lane 
             float d = sensor_fusion[i][6];
-            if (d < (2 + 4 * lane) && d > (2 + 4 * lane - 2)){
-              std::cout << std::endl << "car in front of us " << std::endl;
-              double vx = sensor_fusion[i][3];
-              double vy = sensor_fusion[i][4];
-              double check_speed = sqrt(vx * vx  + vy * vy);
-              std::cout << "velocity is " << check_speed << std::endl;
+            int car_lane = -1;
+            // find lane of the checked car
+            if (d >= 0 && d <= 4){
+              car_lane = 0;
+            } else if (d > 4 && d <= 8){
+              car_lane = 1;
+            } else if (d > 8 && d <= 12){
+              car_lane = 2;
+            }
+            std::cout << "car lane " << car_lane << std::endl;
 
-              double check_car_s = sensor_fusion[i][5];
-              // increase lane car s positon by prediction 
-              check_car_s += ((double)path_size *.02 * check_speed);
-              // check s value greater than mine and s gap
-              if((check_car_s > car_s) && ((check_car_s - car_s) < 40)){
-                // lower reference velocity and flag
-                // ref_vel = 29.5;
-                std::cout << std::endl << "car in front of us distanse is " << check_car_s - car_s;
-                too_close = true;
-              }
+            // if car not in our path of the road pass it 
+            if (car_lane < 0){
+              continue;
+              std::cout << "skip" << std::endl;
+            }
+
+            //find car speed
+            double vx = sensor_fusion[i][3];
+            double vy = sensor_fusion[i][4];
+            double check_speed = sqrt(vx * vx  + vy * vy);
+            //find car s position
+            double check_car_s = sensor_fusion[i][5];
+            //  predict car position after 1 tact 
+            check_car_s += ((double)path_size *.02 * check_speed);
+            
+            int lane_diff = car_lane - lane;
+            switch (lane_diff)
+            {
+            // car in our lane 
+            case 0:
+              same_lane |= check_car_s > car_s && check_car_s - car_s < SAVE_DIST;
+              // std::cout << std::endl;
+              if(same_lane)
+               std::cout << "vehicle in the same lane" << std::endl;
+              break;
+            // car in left lane
+            case -1:
+              left_lane |= car_s - SAVE_DIST < check_car_s && car_s + SAVE_DIST > check_car_s;
+              if(left_lane)
+               std::cout << "vehicle in left lane" << std::endl;
+              break;
+            // car in right lane
+            case 1:
+              right_lane |= car_s - SAVE_DIST < check_car_s && car_s + SAVE_DIST > check_car_s;
+              if(right_lane)
+               std::cout << "vehicle in right lane" << std::endl;
+              break;
+            
+            default:
+              break;
             }
           }
-
-          if(too_close){
-            ref_vel -= .4;
+          // std::cout << std::endl;
+          // std::cout << "result of the sensor fusion"<< std::endl;
+          // std::cout << "left lane " << left_lane << " center lane " << same_lane << " right lane " << right_lane;
+          const double ACC = .224;
+          const double BRA = .224;
+          // const double MAX_VEL;
+          // define car behavior
+          if(same_lane){
+            std::cout << std::endl;
+            // std::cout << "vehicle in the same lane" << std::endl;
+            // bool changed = false;
+            std::cout << " " << left_lane << std::endl;
+            if (!left_lane && lane > 0){
+              
+              std::cout << "left lane " << left_lane << std::endl;
+              std::cout << "take left lane" << std::endl;
+              lane--;
+            } else if (!right_lane && lane < 2){
+              std::cout << "right lane "<< right_lane << std::endl;
+              std::cout << "take right lane" << std::endl;
+              lane++;
+            } else {
+              std::cout << "can't change lane, redusing speed, curent ref_vel is "<< ref_vel << std::endl;
+              ref_vel -= BRA;
+            }
           }
-          else if(ref_vel < 49.5){
-            ref_vel += .224;
+          else if(!same_lane && ref_vel < 49.5){
+            std::cout << "lane is free, increasing speed, curent ref_vel is "<< ref_vel<< std::endl;
+            ref_vel += ACC;
           }
 
           // sparce list of waypoints 
