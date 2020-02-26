@@ -1,6 +1,22 @@
+
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+The goal of this project is to build a path planner that creates smooth, safe trajectories for the car to follow. The highway track has other vehicles, all going different speeds, but approximately obeying the 50 MPH speed limit.
+
+Code for path generations starts at 105 line of the main.cpp file.
+First of all I read previous path length and set starting position of the car. After that on lines 115-117 I set up flags for lane occupancy. 
+
+There is code for analize sensor fusion data at lines from 119 to 175. Here I find out which car in which lane and set up flags for lane occupancy.
+
+Code in lines 180-210 define car behavior depending on occupancy of the lanes.
+
+Code lines 212-310 describe smooth trajectory generation.
+
+My pathplanner is able to drive at least 7.40 miles without the incident as you can see on the printscreen of the simulator.
+![Result](./result.png)
+
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
 
