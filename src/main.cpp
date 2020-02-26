@@ -25,7 +25,7 @@ int main() {
   vector<double> map_waypoints_dy;
 
   // Waypoint map to read from
-  string map_file_ = "/home/alexpan/Work/CarND-Path-Planning-Project/data/highway_map.csv";
+  string map_file_ = "../data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
 
@@ -118,7 +118,7 @@ int main() {
 
           //analize sensor fusion data
           for(int i = 0; i < sensor_fusion.size(); i++){
-            // car in my lane 
+            // read checked car's coordinate d  
             float d = sensor_fusion[i][6];
             int car_lane = -1;
             // find lane of the checked car
@@ -129,12 +129,12 @@ int main() {
             } else if (d > 8 && d <= 12){
               car_lane = 2;
             }
-            std::cout << "car lane " << car_lane << std::endl;
+            // std::cout << "car lane " << car_lane << std::endl;
 
             // if car not in our path of the road pass it 
             if (car_lane < 0){
               continue;
-              std::cout << "skip" << std::endl;
+              // std::cout << "skip" << std::endl;
             }
 
             //find car speed
@@ -145,7 +145,7 @@ int main() {
             double check_car_s = sensor_fusion[i][5];
             //  predict car position after 1 tact 
             check_car_s += ((double)path_size *.02 * check_speed);
-            
+             
             int lane_diff = car_lane - lane;
             switch (lane_diff)
             {
@@ -153,20 +153,20 @@ int main() {
             case 0:
               same_lane |= check_car_s > car_s && check_car_s - car_s < SAVE_DIST;
               // std::cout << std::endl;
-              if(same_lane)
-               std::cout << "vehicle in the same lane" << std::endl;
+              // if(same_lane)
+              //  std::cout << "vehicle in the same lane" << std::endl;
               break;
             // car in left lane
             case -1:
               left_lane |= car_s - SAVE_DIST < check_car_s && car_s + SAVE_DIST > check_car_s;
-              if(left_lane)
-               std::cout << "vehicle in left lane" << std::endl;
+              // if(left_lane)
+              //  std::cout << "vehicle in left lane" << std::endl;
               break;
             // car in right lane
             case 1:
               right_lane |= car_s - SAVE_DIST < check_car_s && car_s + SAVE_DIST > check_car_s;
-              if(right_lane)
-               std::cout << "vehicle in right lane" << std::endl;
+              // if(right_lane)
+              //  std::cout << "vehicle in right lane" << std::endl;
               break;
             
             default:
@@ -176,31 +176,36 @@ int main() {
           // std::cout << std::endl;
           // std::cout << "result of the sensor fusion"<< std::endl;
           // std::cout << "left lane " << left_lane << " center lane " << same_lane << " right lane " << right_lane;
+          
+          // constants for acceleration, bracking, max velocity
           const double ACC = .224;
           const double BRA = .224;
-          // const double MAX_VEL;
+          const double MAX_VEL = 49.5;
+
           // define car behavior
+          // car in the same lane
           if(same_lane){
-            std::cout << std::endl;
+            // std::cout << std::endl;
             // std::cout << "vehicle in the same lane" << std::endl;
             // bool changed = false;
-            std::cout << " " << left_lane << std::endl;
-            if (!left_lane && lane > 0){
+            // std::cout << " " << left_lane << std::endl;
+            
+            if (!left_lane && lane > 0){ // left lane if free
+              // std::cout << "left lane " << left_lane << std::endl;
+              // std::cout << "take left lane" << std::endl;
               
-              std::cout << "left lane " << left_lane << std::endl;
-              std::cout << "take left lane" << std::endl;
-              lane--;
-            } else if (!right_lane && lane < 2){
-              std::cout << "right lane "<< right_lane << std::endl;
-              std::cout << "take right lane" << std::endl;
-              lane++;
-            } else {
-              std::cout << "can't change lane, redusing speed, curent ref_vel is "<< ref_vel << std::endl;
-              ref_vel -= BRA;
+              lane--; // go to the left
+            } else if (!right_lane && lane < 2){ // right lane is free
+              // std::cout << "right lane "<< right_lane << std::endl;
+              // std::cout << "take right lane" << std::endl;
+              lane++; // go to the right
+            } else { // no free lane 
+              // std::cout << "can't change lane, redusing speed, curent ref_vel is "<< ref_vel << std::endl;
+              ref_vel -= BRA; // slow down 
             }
           }
-          else if(!same_lane && ref_vel < 49.5){
-            std::cout << "lane is free, increasing speed, curent ref_vel is "<< ref_vel<< std::endl;
+          else if(!same_lane && ref_vel < MAX_VEL){ // my lane is free increase speed to the limit 
+            // std::cout << "lane is free, increasing speed, curent ref_vel is "<< ref_vel<< std::endl;
             ref_vel += ACC;
           }
 
@@ -276,7 +281,7 @@ int main() {
             next_y_vals.push_back(previous_path_y[i]);
           }
 
-          // breack up spline according to desired reference velocity
+          // break up spline according to desired reference velocity
           double target_x = 30.0;
           double target_y = s(target_x);
           double target_dist = sqrt(target_x * target_x + target_y * target_y);
